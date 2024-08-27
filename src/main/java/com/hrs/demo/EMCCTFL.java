@@ -30,7 +30,7 @@ public class EMCCTFL extends DeviceInfo{
 	  * @param devices map of devices to allow changing device values
 	  * @return response to prism action, currently null
 	  */
-    public static String prism(String IMEI, JsonObject json, Map<String, DeviceInfo> devices) 
+    public static JsonObject prism(String IMEI, JsonObject json, Map<String, DeviceInfo> devices) 
     {
     	//get prism value from the json and set the EMCCTFL prism value to it. Respresents if van is working
     	int prism = json.get("deployed").getAsInt();
@@ -44,10 +44,11 @@ public class EMCCTFL extends DeviceInfo{
 	 * @param IMEI of incursion button pressed
 	 * @return the string to set off incursion LED on EMCC device
 	 */
-	public static String incursionButton(String IMEI) 
+	public static JsonObject incursionButton(String IMEI, Map<String, PrintWriter> deviceWriters) 
 	{
 		DemoApplication.ioRed(IMEI);
-		return TFL_INCURSION;
+		sendDeviceMessage(IMEI, TFL_INCURSION, deviceWriters);
+		return null;
 		
 	}
     

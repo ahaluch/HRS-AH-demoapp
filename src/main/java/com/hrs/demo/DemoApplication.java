@@ -132,7 +132,7 @@ public class DemoApplication {
         database.logEvent( IMEI, data, action);
 
         
-        String reply = null; //reply to device
+        JsonObject reply = null; //reply to device
 
         // select correct action, make correct reply and update anything required
         switch (action) {
@@ -161,7 +161,7 @@ public class DemoApplication {
             	reply = EMCCTFL.prism(IMEI, json, devices);
             	break;
             case "incursionButton":
-            	reply = EMCCTFL.incursionButton(IMEI);
+            	reply = EMCCTFL.incursionButton(IMEI, deviceWriters);
             	break;
         }
         
@@ -176,7 +176,7 @@ public class DemoApplication {
      * @param out PrintWriter of device received to save
      * @return message to send back to device (currently null)
      */
-    public static String powerOn(String IMEI, JsonObject json, PrintWriter out)
+    public static JsonObject powerOn(String IMEI, JsonObject json, PrintWriter out)
     {
     	//add device writer to map so can send messages to device in the future
     	deviceWriters.put(IMEI,  out);
@@ -212,7 +212,7 @@ public class DemoApplication {
      * @param json JSONObject needs latitude, longitude, speed
      * @return reply to postion action to be sent to device
      */
-    public static String position(String IMEI, JsonObject json) {
+    public static JsonObject position(String IMEI, JsonObject json) {
         try {
         	DeviceInfo info = devices.get(IMEI);
             
@@ -242,7 +242,7 @@ public class DemoApplication {
             database.updatePosition(latitude, longitude, WZName, IMEI, speed);
          
             //message sent back to PSA
-            return "{\"Action\":\"WorkzoneStatus\",\"Workzone\":\"" + WZName + "\",\"uuid\":" + json.get("uuid").getAsString() + "}";
+            return positionReply(WZName,json.get("uuid").getAsString());
         }
             
             
@@ -257,7 +257,7 @@ public class DemoApplication {
      * @param IMEI of any device in the workZone
      * @return reply to ioRed action (null currently)
      */
-    public static String ioRed(String IMEI) 
+    public static JsonObject ioRed(String IMEI) 
     {
     	DeviceInfo info = devices.get(IMEI);
     	
@@ -275,7 +275,7 @@ public class DemoApplication {
      * @param IMEI of any device in the workZone
      * @return reply to ioBlue action (null currently)
      */
-    public static String ioBlue(String IMEI)
+    public static JsonObject ioBlue(String IMEI)
     {
     	//gets the WZ of particular IMEI to set alarm on other WZ devices
     	DeviceInfo info = devices.get(IMEI);
@@ -292,7 +292,7 @@ public class DemoApplication {
      * @param IMEI of any device in WZ of WZ to be reset
      * @return reply to reset action (null currently)
      */
-    public static String reset(String IMEI)
+    public static JsonObject reset(String IMEI)
     {
     	//gets the WZ of particular IMEI to set alarm on other WZ devices
     	DeviceInfo info = devices.get(IMEI);
@@ -308,7 +308,7 @@ public class DemoApplication {
      * @param IMEI of device wanting to turn off
      * @return reply to powerOff action (null currently)
      */
-    public static String powerOff(String IMEI)
+    public static JsonObject powerOff(String IMEI)
     {
     	//update device status in the database and removes its writer so it can't be sent another message
         deviceWriters.remove(IMEI);
@@ -325,6 +325,23 @@ public class DemoApplication {
         if (info.getProductName() != null && !info.getProductName().equals(PSA_CODE)) WZ.setEMCCCReady(EMCCTFL.checkEMCCReady(WZ, devices));
         
         return null;
+    }
+    
+    
+    /**
+     * creates reply JSON to a position action
+     * @param WZName name of workZone currently in
+     * @param uuid of position message
+     * @return
+     */
+    private static JsonObject positionReply(String WZName, String uuid)
+    {
+    	JsonObject reply = new JsonObject();
+    	reply.addProperty("Action", "WorkzoneStatus");
+    	reply.addProperty("Workzone", WZName);
+    	reply.addProperty("uuid", uuid);
+    	
+    	return reply;
     }
     
     /**
