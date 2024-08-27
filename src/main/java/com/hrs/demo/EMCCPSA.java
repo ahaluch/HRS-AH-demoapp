@@ -3,6 +3,8 @@ package com.hrs.demo;
 import java.io.PrintWriter;
 import java.util.Map;
 
+import com.google.gson.JsonObject;
+
 public class EMCCPSA extends DeviceInfo{
 	
     private static final String TFL_INCURSION = "{\"Action\":\"LED\",\"led3\":1,\"flash3\":1}";
@@ -21,7 +23,7 @@ public class EMCCPSA extends DeviceInfo{
 	 * @param IMEI of device button was pressed on
 	 * @return reply for PSA
 	 */
-	public static String incursionButton(String IMEI,  Map<String, DeviceInfo> devices, String TFL, Map<String, PrintWriter> deviceWriters, String PSA)
+	public static JsonObject incursionButton(String IMEI,  Map<String, DeviceInfo> devices, String TFL, Map<String, PrintWriter> deviceWriters, String PSA)
 	{
 		//send red alarm to all PSAs in WZ
 		DemoApplication.ioRed(IMEI);
@@ -34,7 +36,7 @@ public class EMCCPSA extends DeviceInfo{
 				deviceWriters.get(s).println(TFL_INCURSION);
 			}
 		}
-		return PSA;
+		return null;
 	}
 
 	public double getDistance() {
