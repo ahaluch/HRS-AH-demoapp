@@ -7,12 +7,13 @@ public class EMCCPSA extends DeviceInfo{
 	
     private static final String TFL_INCURSION = "{\"Action\":\"LED\",\"led3\":1,\"flash3\":1}";
 	
-	private double distance; //distance from TFL
+	private double distance_metres; //distance from TFL
+	private double DEFAULT_DISTANCE_METRES = 1000;
 	
 	public EMCCPSA(int batteryLevel, double d,String network, String pCBVersion, String string, String productName, int signalStrength,String iccid)
 	{
 		super(batteryLevel, d,network, pCBVersion, string, productName, signalStrength,iccid);
-		this.distance = 1000;
+		this.distance_metres = DEFAULT_DISTANCE_METRES;
 	}
 	
 	/**
@@ -37,11 +38,11 @@ public class EMCCPSA extends DeviceInfo{
 	}
 
 	public double getDistance() {
-		return distance;
+		return distance_metres;
 	}
 
 	public void setDistance(double distance) {
-		this.distance = distance;
+		this.distance_metres = distance;
 	}
 
 }
