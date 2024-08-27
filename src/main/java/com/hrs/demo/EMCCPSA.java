@@ -1,0 +1,47 @@
+package com.hrs.demo;
+
+import java.io.PrintWriter;
+import java.util.Map;
+
+public class EMCCPSA extends DeviceInfo{
+	
+    private static final String TFL_INCURSION = "{\"Action\":\"LED\",\"led3\":1,\"flash3\":1}";
+	
+	private double distance; //distance from TFL
+	
+	public EMCCPSA(int batteryLevel, double d,String network, String pCBVersion, String string, String productName, int signalStrength,String iccid)
+	{
+		super(batteryLevel, d,network, pCBVersion, string, productName, signalStrength,iccid);
+		this.distance = 1000;
+	}
+	
+	/**
+	 * action for when EMCC PSA action button is pressed
+	 * @param IMEI of device button was pressed on
+	 * @return reply for PSA
+	 */
+	public static String incursionButton(String IMEI,  Map<String, DeviceInfo> devices, String TFL, Map<String, PrintWriter> deviceWriters, String PSA)
+	{
+		//send red alarm to all PSAs in WZ
+		DemoApplication.ioRed(IMEI);
+		
+		//loop through and alarm all TFL in WZ
+		for(String s: devices.get(IMEI).getWorkZone().getDeviceIMEIs()) 
+		{
+			//if device is TFL send message
+			if(devices.get(s).getProductName().equals(TFL)) {
+				deviceWriters.get(s).println(TFL_INCURSION);
+			}
+		}
+		return PSA;
+	}
+
+	public double getDistance() {
+		return distance;
+	}
+
+	public void setDistance(double distance) {
+		this.distance = distance;
+	}
+
+}
