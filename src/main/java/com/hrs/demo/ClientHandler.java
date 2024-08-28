@@ -24,8 +24,13 @@ public class ClientHandler implements Runnable {
             StringBuilder sb = new StringBuilder();
             int balance = 0;
             
-            while (true) {
+            while (!clientSocket.isClosed()) {
                 int n = in.read(buf);
+                
+                if (n == -1) {
+                	break;
+                }
+                
                 input = Character.toString(buf[0]);
                 sb.append(input);
 
@@ -49,7 +54,11 @@ public class ClientHandler implements Runnable {
             }
         } catch (IOException e) {
         	System.out.println("device disconnected");
-            //e.printStackTrace();
-        }
+        	try {
+				clientSocket.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+        } 
     }
 }
