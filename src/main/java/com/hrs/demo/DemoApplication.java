@@ -215,8 +215,7 @@ public class DemoApplication {
     public static JsonObject position(String IMEI, JsonObject json) {
         try {
         	DeviceInfo info = devices.get(IMEI);
-        	
-        	
+            
         	//updates devices lat and lon in POJO, needed for rest of processing
             double latitude = json.get("latitude").getAsDouble();
             double longitude = json.get("longitude").getAsDouble();

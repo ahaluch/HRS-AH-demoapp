@@ -1,5 +1,6 @@
 package com.hrs.demo;
 
+import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +28,7 @@ class DemoApplicationTests {
 		instance = new DemoApplication();
 		
 		
-		//start deviceds map
+		//start devices map
 		try {
 			Field field = DemoApplication.class.getDeclaredField("devices");
 			field.setAccessible(true);
@@ -72,6 +73,21 @@ class DemoApplicationTests {
 			
 			workZones.put("UK", test);
 			field.set(instance, workZones);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		//start printWriter map
+		try {
+			Field field = DemoApplication.class.getDeclaredField("deviceWriters");
+			field.setAccessible(true);
+			
+			Map<String, PrintWriter> deviceWriters = new HashMap<>();
+			
+			
+			deviceWriters.put("1", new PrintWriter(null, true));
+			field.set(instance, devices);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
