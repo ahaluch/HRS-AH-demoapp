@@ -43,7 +43,7 @@ public class DemoApplication {
 
     private static Map<String, DeviceInfo> devices = new HashMap<>();
     private static Map<String, WorkZone> workZones = new HashMap<>(); 
-    private static Map<String, PrintWriter> deviceWriters = new HashMap<>();
+    private static Map<String, Socket> deviceWriters = new HashMap<>();
     
     private static Database database;
     
@@ -106,7 +106,7 @@ public class DemoApplication {
      * @param out devices specific printWriter to send extra messages to device
      * @throws URISyntaxException
      */
-    public static synchronized void processMessage(StringBuilder sb, PrintWriter out) throws URISyntaxException {
+    public static synchronized void processMessage(StringBuilder sb, Socket clientSocket) throws URISyntaxException {
         RestTemplate restTemplate = new RestTemplate();
         String data = sb.toString();
         String resourceUrl = "http://localhost:8080/process/";
@@ -140,7 +140,7 @@ public class DemoApplication {
                 reply = position(IMEI, json);
                 break;
             case "powerup":
-                reply = powerOn(IMEI, json, out);
+                reply = powerOn(IMEI, json, clientSocket);
                 break;
             case "poweroff":
                 reply = powerOff(IMEI);
@@ -149,7 +149,7 @@ public class DemoApplication {
                 reply = ioRed(IMEI);
                 break;
             case "IoRed": //EMCC alarm action
-            	reply = EMCCPSA.incursionButton(IMEI, devices, EMCC_TFL_CODE, deviceWriters, RED_ALARM_MESSAGE);
+            	reply = EMCCPSA.incursionButton(IMEI, devices, EMCC_TFL_CODE, RED_ALARM_MESSAGE);
             	break;
             case "ioblue":
                 reply = ioBlue(IMEI);
@@ -161,12 +161,16 @@ public class DemoApplication {
             	reply = EMCCTFL.prism(IMEI, json, devices);
             	break;
             case "incursionButton":
-            	reply = EMCCTFL.incursionButton(IMEI, deviceWriters);
+            	reply = EMCCTFL.incursionButton(IMEI);
             	break;
         }
         
         System.out.println(data);
-        out.println(reply);
+        if (reply != null)
+        {
+        	sendMessage(IMEI, reply.toString());
+        }
+        
     }
     
     /**
@@ -176,10 +180,10 @@ public class DemoApplication {
      * @param out PrintWriter of device received to save
      * @return message to send back to device (currently null)
      */
-    public static JsonObject powerOn(String IMEI, JsonObject json, PrintWriter out)
+    public static JsonObject powerOn(String IMEI, JsonObject json, Socket clientSocket)
     {
     	//add device writer to map so can send messages to device in the future
-    	deviceWriters.put(IMEI,  out);
+    	deviceWriters.put(IMEI,  clientSocket);
     	
     	//gets type of device turned on from database
     	String product = database.getProduct(IMEI);
@@ -228,7 +232,7 @@ public class DemoApplication {
             //If EMCC TFL is transmitting its location(Prism on) calculates distances between PSAs
             if (info.getProductName() != null && info.getProductName().equals(EMCC_TFL_CODE) && ((EMCCTFL) info).getPrism() == 0)
             {
-            	EMCCTFL.updateDistance((EMCCTFL)info, IMEI, devices, deviceWriters);
+            	EMCCTFL.updateDistance((EMCCTFL)info, IMEI, devices);
             }
             
             //sets devices speed if sent in the JSON 
@@ -244,8 +248,6 @@ public class DemoApplication {
             //message sent back to PSA
             return positionReply(WZName,json.get("uuid").getAsString());
         }
-            
-            
         catch(Exception e) {
         	e.printStackTrace();
             return null;
@@ -334,15 +336,22 @@ public class DemoApplication {
      * @param uuid of position message
      * @return
      */
-    private static JsonObject positionReply(String WZName, String uuid)
+    public static JsonObject positionReply(String WZName, String uuid)
     {
-    	JsonObject reply = new JsonObject();
-    	reply.addProperty("Action", "WorkzoneStatus");
-    	reply.addProperty("Workzone", WZName);
-    	reply.addProperty("uuid", uuid);
+    	JsonObject reply = buildPositionDetail(WZName, uuid);
+    	
+    	System.out.println(reply);
     	
     	return reply;
     }
+
+	private static JsonObject buildPositionDetail(String WZName, String uuid) {
+		JsonObject reply = new JsonObject();
+    	reply.addProperty("Action", "WorkzoneStatus");
+    	reply.addProperty("Workzone", WZName);
+    	reply.addProperty("uuid", uuid);
+		return reply;
+	}
     
     /**
      * Sends a message to every device in a workZone and changes status of those devices
@@ -357,29 +366,13 @@ public class DemoApplication {
     	{
     		try {
     			// sends message to the device and updates the database with the new status
-    			deviceWriters.get(s).println(reply);
+    			sendMessage(s, reply);
     			database.updateDeviceStatus(s, status);
     		} catch(Exception e) {
     			e.printStackTrace();
     		}
     		
     	}
-    }
-    
-    
-	/**
-	 * sends a message to a given device
-	 * @param IMEI of device the message should be sent to
-	 * @param message of what you want to sent
-	 */
-    private static void sendMessage(String IMEI, String message) 
-    {  	
-    	//device can't be EMCCTFL. Breaks the logic of the EMCC if not checked
-    	if(devices.get(IMEI).getProductName().equals(PSA_CODE))
-    	{
-    		deviceWriters.get(IMEI).println(message);
-    	}
-    	
     }
     
     /**
@@ -477,6 +470,26 @@ public class DemoApplication {
 		}
 		
 		return inside;
+	}
+	
+	/**
+	 * sends a message to a given device
+	 * @param IMEI of device the message should be sent to
+	 * @param message of what you want to sent
+	 */
+	public static void sendMessage(String IMEI, String message)
+	{
+		Socket socket = deviceWriters.get(IMEI);
+		if (socket != null && socket.isConnected())
+		{
+			try {
+				socket.getOutputStream().write(message.getBytes());
+				socket.getOutputStream().flush();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		}
 	}
 	
 	/**

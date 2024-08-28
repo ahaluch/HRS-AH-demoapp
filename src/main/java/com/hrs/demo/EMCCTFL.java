@@ -1,6 +1,7 @@
 package com.hrs.demo;
 
 import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.Map;
 
 import com.google.gson.JsonObject;
@@ -44,10 +45,10 @@ public class EMCCTFL extends DeviceInfo{
 	 * @param IMEI of incursion button pressed
 	 * @return the string to set off incursion LED on EMCC device
 	 */
-	public static JsonObject incursionButton(String IMEI, Map<String, PrintWriter> deviceWriters) 
+	public static JsonObject incursionButton(String IMEI) 
 	{
 		DemoApplication.ioRed(IMEI);
-		sendDeviceMessage(IMEI, TFL_INCURSION, deviceWriters);
+		sendDeviceMessage(IMEI, TFL_INCURSION);
 		return null;
 		
 	}
@@ -97,7 +98,7 @@ public class EMCCTFL extends DeviceInfo{
 	 * @param deviceWriters
 	 * @return
 	 */
-	public static String updateDistance(EMCCTFL tfl, String tflIMEI,  Map<String, DeviceInfo> devices, Map<String, PrintWriter> deviceWriters) {
+	public static String updateDistance(EMCCTFL tfl, String tflIMEI,  Map<String, DeviceInfo> devices) {
 		
 		for(String IMEI : tfl.getWorkZone().getDeviceIMEIs()) 
 		{
@@ -112,11 +113,11 @@ public class EMCCTFL extends DeviceInfo{
 				//ceeck if distance passes milestones
 				if (lastDistance > TFL_DISTANCE_CLOSE && currentDistance < TFL_DISTANCE_CLOSE) {
 					System.out.println("less than 200m");
-					TFLAlarm(IMEI, tflIMEI, deviceWriters);
+					TFLAlarm(IMEI, tflIMEI);
 				}
 				else if (lastDistance > TFL_DISTANCE_FAR && currentDistance < TFL_DISTANCE_FAR)
 				{
-					TFLFar(IMEI, tflIMEI, deviceWriters);
+					TFLFar(IMEI, tflIMEI);
 					System.out.println("Less than 500m");
 				}
 				
@@ -132,36 +133,32 @@ public class EMCCTFL extends DeviceInfo{
 	 * sets off the EMCC incursion alarm for a device
 	 * @param PSAIMEI IMEI of PSA
 	 * @param tflIMEI IMEI of TFL
-	 * @param deviceWriters map of devicewriters to send messages
 	 */
-	private static void TFLAlarm(String PSAIMEI, String tflIMEI, Map<String, PrintWriter> deviceWriters)
+	private static void TFLAlarm(String PSAIMEI, String tflIMEI)
 	{
-		sendDeviceMessage(PSAIMEI, RED_ALARM_MESSAGE, deviceWriters);
-		sendDeviceMessage(tflIMEI, TFL_INCURSION, deviceWriters);
+		sendDeviceMessage(PSAIMEI, RED_ALARM_MESSAGE);
+		sendDeviceMessage(tflIMEI, TFL_INCURSION);
 	}
 	
 	/**
 	 * sets off the EMCC proximity alarm for a device
 	 * @param PSAIMEI IMEI of PSA
 	 * @param tflIMEI IMEI of TFL
-	 * @param deviceWriters map of devicewriters to send messages
 	 */
-	private static void TFLFar(String PSAIMEI, String tflIMEI, Map<String, PrintWriter> deviceWriters) 
+	private static void TFLFar(String PSAIMEI, String tflIMEI) 
 	{
-		sendDeviceMessage(PSAIMEI, RED_ALARM_MESSAGE, deviceWriters);
-		sendDeviceMessage(tflIMEI, TFL_PROXIMITY, deviceWriters);
+		sendDeviceMessage(PSAIMEI, RED_ALARM_MESSAGE);
+		sendDeviceMessage(tflIMEI, TFL_PROXIMITY);
 	}
 	
 	/**
 	 * sends a message to a specific device
 	 * @param IMEI of device message should be sent to
 	 * @param message to be sent
-	 * @param deviceWriters map of deviceWriters to send messages
 	 */
-	private static void sendDeviceMessage(String IMEI, String message,  Map<String, PrintWriter> deviceWriters) 
+	private static void sendDeviceMessage(String IMEI, String message) 
 	{
-		PrintWriter out = deviceWriters.get(IMEI);
-		out.println(message);
+		DemoApplication.sendMessage(IMEI, message);
 	}
 	
 	/**
