@@ -261,14 +261,7 @@ public class DemoApplication {
      */
     public static JsonObject ioRed(String IMEI) 
     {
-    	DeviceInfo info = devices.get(IMEI);
-    	
-    	//gets the WZ of particular IMEI to set alarm on other WZ devices
-    	info.getWorkZone().setAlarmStatus(RED_ALARM_MESSAGE);
-  
-    	//sends alarm to every device in WZ
-    	sendWZMessage(IMEI, RED_ALARM_MESSAGE, RED_STATUS);
-    		
+    	ioFunctionSendMessage(IMEI, RED_ALARM_MESSAGE, RED_STATUS);	
         return null;
     }
     
@@ -279,13 +272,7 @@ public class DemoApplication {
      */
     public static JsonObject ioBlue(String IMEI)
     {
-    	//gets the WZ of particular IMEI to set alarm on other WZ devices
-    	DeviceInfo info = devices.get(IMEI);
-    	info.getWorkZone().setAlarmStatus(BLUE_ALARM_MESSAGE);
-    	
-    	//sends alarm to every device in WZ
-    	sendWZMessage(IMEI, BLUE_ALARM_MESSAGE, BLUE_STATUS);
-    	
+    	ioFunctionSendMessage(IMEI, BLUE_ALARM_MESSAGE, BLUE_STATUS);
         return null;
     }
     
@@ -296,14 +283,25 @@ public class DemoApplication {
      */
     public static JsonObject reset(String IMEI)
     {
-    	//gets the WZ of particular IMEI to set alarm on other WZ devices
-    	DeviceInfo info = devices.get(IMEI);
-    	info.getWorkZone().setAlarmStatus(GREEN_ALARM_MESSAGE);
-    	
-    	//sends reset command to every device in WZ
-    	sendWZMessage(IMEI, GREEN_ALARM_MESSAGE, GREEN_STATUS);	
+    	ioFunctionSendMessage(IMEI, GREEN_ALARM_MESSAGE, GREEN_STATUS);	
     	return null;
     }
+
+    /**
+     * sends status and colour change to a given device
+     * @param IMEI of device wanting to change
+     * @param message that will be sent
+     * @param status of device after message
+     */
+	private static void ioFunctionSendMessage(String IMEI, String message, String status)
+	{
+		//gets the WZ of particular IMEI to set alarm on other WZ devices
+    	DeviceInfo info = devices.get(IMEI);
+    	info.getWorkZone().setAlarmStatus(message);
+    	
+    	//sends reset command to every device in WZ
+    	sendWZMessage(IMEI, message, status);
+	}
     
     /**
      * powers off a given device, removes from maps and updates database to avoid future processing and incorrect alarming
@@ -338,20 +336,15 @@ public class DemoApplication {
      */
     public static JsonObject positionReply(String WZName, String uuid)
     {
-    	JsonObject reply = buildPositionDetail(WZName, uuid);
+    	JsonObject reply = new JsonObject();
+    	reply.addProperty("Action", "WorkzoneStatus");
+    	reply.addProperty("Workzone", WZName);
+    	reply.addProperty("uuid", uuid);
     	
     	System.out.println(reply);
     	
     	return reply;
     }
-
-	private static JsonObject buildPositionDetail(String WZName, String uuid) {
-		JsonObject reply = new JsonObject();
-    	reply.addProperty("Action", "WorkzoneStatus");
-    	reply.addProperty("Workzone", WZName);
-    	reply.addProperty("uuid", uuid);
-		return reply;
-	}
     
     /**
      * Sends a message to every device in a workZone and changes status of those devices
