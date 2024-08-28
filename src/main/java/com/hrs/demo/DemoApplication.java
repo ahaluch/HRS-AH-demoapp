@@ -215,7 +215,8 @@ public class DemoApplication {
     public static JsonObject position(String IMEI, JsonObject json) {
         try {
         	DeviceInfo info = devices.get(IMEI);
-            
+        	
+        	
         	//updates devices lat and lon in POJO, needed for rest of processing
             double latitude = json.get("latitude").getAsDouble();
             double longitude = json.get("longitude").getAsDouble();
@@ -334,12 +335,14 @@ public class DemoApplication {
      * @param uuid of position message
      * @return
      */
-    private static JsonObject positionReply(String WZName, String uuid)
+    public static JsonObject positionReply(String WZName, String uuid)
     {
     	JsonObject reply = new JsonObject();
     	reply.addProperty("Action", "WorkzoneStatus");
     	reply.addProperty("Workzone", WZName);
     	reply.addProperty("uuid", uuid);
+    	
+    	System.out.println(reply);
     	
     	return reply;
     }

@@ -1,81 +1,156 @@
 package com.hrs.demo;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 @SpringBootTest
 class DemoApplicationTests {
+	
+	private static DemoApplication instance;
+	private static Database dbInstance;
+	
+	@BeforeAll
+	public static void setUp()
+	{
+		instance = new DemoApplication();
+		
+		
+		//start deviceds map
+		try {
+			Field field = DemoApplication.class.getDeclaredField("devices");
+			field.setAccessible(true);
+			
+			Map<String, DeviceInfo> devices = new HashMap<>();
+			DeviceInfo device1 =  new DeviceInfo(0, 0, null, null, null, "test", 0, null);
+			
+			devices.put("1", device1);
+			field.set(instance, devices);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		//start database class
+		try {
+			Field field = DemoApplication.class.getDeclaredField("database");
+			field.setAccessible(true);
+			
+			dbInstance = new Database();
+			
+			field.set(instance, dbInstance);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		//start workzone map
+		try {
+			Field field = DemoApplication.class.getDeclaredField("workZones");
+			field.setAccessible(true);
+			
+			Map<String, WorkZone> workZones = new HashMap<>(); 
+			
+	        double[][] UKPolygon = {
+	            	  {59.403582176583114, -11.311147978462063},
+	            	  {48.92665193728061, -10.739858915962063},
+	            	  {48.98436485748158, 4.245492646537956},
+	            	  {59.71528456462309, 4.465219209037956},
+	            	};
+	    	WorkZone test = new WorkZone("UK", UKPolygon);
+			
+			workZones.put("UK", test);
+			field.set(instance, workZones);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
 	@Test
 	void contextLoads() {
 	}
 	
-	/*
+	
 	@Test
-	@DisplayName("Distance between 2 points")
-	public void distance() 
+	@DisplayName("setting device Work zone normal")
+	public void setDeviceWorkZone_pass()
 	{
-		double result = DemoApplication.distanceBetween2Points(52.944197, -0.818512, 52.948197, -0.818512);
-		Assertions.assertEquals(0.4447797065784902, result);
+		
 	}
 	
 	@Test
-	@DisplayName("Normal")
-	public void createMessage_Normal() 
+	@DisplayName("setting device Work zone fail")
+	public void setDeviceWorkZone_fail()
 	{
-		String result = DemoApplication.createMessage(new DeviceInfo(6600, 52.253197, -0.818512));
-		Assertions.assertEquals("Normal", result);
+		
 	}
 	
 	@Test
-	@DisplayName("Close to office")
-	public void createMessage_Office() 
+	@DisplayName("if point is inside a polygon, true")
+	public void isPointInPolygon_true()
 	{
-		String result = DemoApplication.createMessage(new DeviceInfo(6600, 52.944197, -0.818512));
-		Assertions.assertEquals("Nearly Home", result);
+		
 	}
 	
 	@Test
-	@DisplayName("Low battery warning")
-	public void createMessage_Battery_Warning() 
+	@DisplayName("if point is inside a polygon, false")
+	public void isPointInPolygon_false()
 	{
-		String result = DemoApplication.createMessage(new DeviceInfo(5500, 52.25319, -0.858512));
-		Assertions.assertEquals("Warning low battery", result);
+		
 	}
 	
 	@Test
-	@DisplayName("Low battery alarm, close to office")
-	public void createMessage_Battery_Alarm_At_Office() 
+	@DisplayName("position reply, pass")
+	public void position_reply_pass()
 	{
-		String result = DemoApplication.createMessage(new DeviceInfo(4600, 52.944197, -0.818512));
-		Assertions.assertEquals("ALARM - low battery, turning off", result);
+		JsonObject expected = JsonParser.parseString("{\"Action\":\"WorkzoneStatus\",\"Workzone\":\"UK\",\"uuid\":\"2\"}").getAsJsonObject();
+		JsonObject result = DemoApplication.positionReply("UK", "2");
+		Assertions.assertEquals(expected, result);
+	}
+	
+	
+	@Test
+	@DisplayName("position action reply pass")
+	public void position_pass()
+	{
+		JsonObject json = JsonParser.parseString("{\"IMEI\":\"4345\",\"uuid\":\"2\",\"Action\":\"Position\",\"latitude\":52.16889771553794,\"longitude\":0.5086954362703011}").getAsJsonObject();
+		JsonObject expected = JsonParser.parseString("{\"Action\":\"WorkzoneStatus\",\"Workzone\":\"UK\",\"uuid\":\"2\"}").getAsJsonObject();
+		JsonObject result = DemoApplication.position("1", json);
+		Assertions.assertEquals(expected, result);
 	}
 	
 	@Test
-	@DisplayName("Low battery alarm, not at office")
-	public void createMessage_Battery_Alarm_Not_At_Office() 
+	@DisplayName("position action reply fail")
+	public void position_fail()
 	{
-		String result = DemoApplication.createMessage(new DeviceInfo(4600, 52.253197, -0.818512));
-		Assertions.assertEquals("ALARM - low battery, turning off", result);
+		JsonObject json = JsonParser.parseString("{\"IMEI\":\"4345\",\"uuid\":\"2\",\"Action\":\"Position\",\"latitude\":52.16889771553794,\"longitude\":0.5086954362703011}").getAsJsonObject();
+		JsonObject result = DemoApplication.position("1", json);
+		Assertions.assertEquals(null, result);
 	}
-	
-	@Test
-	@DisplayName("Create message null test")
-	public void createMessage_Null_Data() 
-	{
-		String result = DemoApplication.createMessage(null);
-		Assertions.assertEquals("Device error", result);
-	}
-	
 	
 	@Test
 	@DisplayName("JSON normal")
 	public void JSON_Normal() 
 	{
-		double result = DemoApplication.readJSON("{\"Action\":\"location\",\"BatteryLevel\":\"6600\",\"latitude\":\"52.253197\",\"IMEI\":\"003858092270329\",\"longitude\":\"-0.858512\"}");
-		Assertions.assertEquals(3.858092270329E12, result);
+		JsonObject json = JsonParser.parseString("{\"Action\":\"location\",\"BatteryLevel\":\"6600\",\"latitude\":\"52.253197\",\"IMEI\":\"003858092270329\",\"longitude\":\"-0.858512\"}").getAsJsonObject();
+		String[] result = DemoApplication.readJSON(json);
+		System.out.println(result[0]);
+		System.out.println(result[1]);
+		
+		String[] expected = {"003858092270329", "location"};
+		Assertions.assertArrayEquals(expected, result);
 	}
 	
 	
@@ -83,9 +158,8 @@ class DemoApplicationTests {
 	@DisplayName("JSON null test")
 	public void JSON_Null_Data() 
 	{
-		double result = DemoApplication.readJSON(null);
-		Assertions.assertEquals(0, result);
+		String[] result = DemoApplication.readJSON(null);
+		Assertions.assertEquals(null, result);
 	}
-	*/
 
 }
