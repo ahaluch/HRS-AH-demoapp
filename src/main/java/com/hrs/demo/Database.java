@@ -57,19 +57,6 @@ public class Database {
 	//updates db when a device is powered on, returns SessionID for deviceInfo
 	public int powerOnDevice(String IMEI, int batteryLevel, double d,String network, String pCBVersion, String string, String productName, int signalStrength,String iccid, String status, LocalDateTime date) 
 	{
-		//makes a new session for the device to tell when it was turned on and off
-		String sql = "INSERT INTO sessions (deviceID, opened_session) VALUES (?,?);";
-		
-		//excutes session query
-		try {
-			PreparedStatement statement = database.prepareStatement(sql);
-			statement.setInt(1, getDeviceID(IMEI));
-			statement.setString(2, String.valueOf(date));
-			
-			statement.execute();
-		} catch( Exception e) {
-			e.printStackTrace();
-		}
 		
 		//if device exists in table then run update query, if not run an insert query 
   	  if (deviceExists(IMEI)) 
@@ -79,20 +66,29 @@ public class Database {
 	  {
 		  newDevice(IMEI, batteryLevel, d, network, pCBVersion, string, productName, signalStrength, iccid, status);
 	  }
+  	  
+  	  //makes a new session for the device to tell when it was turned on and off
+  	  String sql = "INSERT INTO sessions (deviceID, opened_session) VALUES (?,?) RETURNING id;";
+  	  int sessionID = -1;
+		
+		//executes session query and returns the columnID
+		try (PreparedStatement statement = database.prepareStatement(sql)){
+			statement.setInt(1, getDeviceID(IMEI));
+			statement.setString(2, String.valueOf(date));
+			
+			try (ResultSet result = statement.executeQuery()) {
+				if (result.next()) {
+					sessionID = result.getInt(1);
+				}
+				System.out.println(sessionID);
+			}
+			
+		} catch( Exception e) {
+			e.printStackTrace();
+		}
 		
   	  //returns id of row just inserted (Session Table) to return to save as a sessionID in DeviceInfo
-  	  sql = "SELECT last_insert_rowid()";
-  	  
-  	  try {
-  		PreparedStatement statement = database.prepareStatement(sql);
-  		ResultSet result = statement.executeQuery();
-  		
-  		return result.getInt(1);
-  	  } catch(Exception e) {
-  		  e.printStackTrace();
-  		  return -1;
-  	  }
-  	  
+  	  return sessionID;
 	}
 	
 	//powerOff action
