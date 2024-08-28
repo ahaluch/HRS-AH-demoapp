@@ -23,7 +23,7 @@ public class EMCCPSA extends DeviceInfo{
 	 * @param IMEI of device button was pressed on
 	 * @return reply for PSA
 	 */
-	public static JsonObject incursionButton(String IMEI,  Map<String, DeviceInfo> devices, String TFL, Map<String, PrintWriter> deviceWriters, String PSA)
+	public static JsonObject incursionButton(String IMEI,  Map<String, DeviceInfo> devices, String TFL, String PSA)
 	{
 		//send red alarm to all PSAs in WZ
 		DemoApplication.ioRed(IMEI);
@@ -33,7 +33,7 @@ public class EMCCPSA extends DeviceInfo{
 		{
 			//if device is TFL send message
 			if(devices.get(s).getProductName().equals(TFL)) {
-				deviceWriters.get(s).println(TFL_INCURSION);
+				DemoApplication.sendMessage(IMEI, TFL_INCURSION);
 			}
 		}
 		return null;
