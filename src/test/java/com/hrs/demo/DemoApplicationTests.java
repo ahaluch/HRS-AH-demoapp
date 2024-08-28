@@ -86,22 +86,6 @@ class DemoApplicationTests {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
-		//start deviceWriter map
-		try {
-			Field field = DemoApplication.class.getDeclaredField("deviceWriters");
-			field.setAccessible(true);
-			
-			Map<String, PrintWriter> deviceWriters = new HashMap<>();
-			
-			/*
-			deviceWriters.put("1", new Socket(1));
-			field.set(instance, devices);
-			*/
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	@Test
