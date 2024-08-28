@@ -44,7 +44,6 @@ public class ClientHandler implements Runnable {
                     try {
                         if (sb.length() > 3 && sb.charAt(0) == '{') {
                             DemoApplication.processMessage(sb, clientSocket);
-                            System.out.println(sb);
                         }
                     } catch (Exception e) {
                         e.printStackTrace();

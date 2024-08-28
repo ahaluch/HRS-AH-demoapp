@@ -107,16 +107,7 @@ public class DemoApplication {
      * @throws URISyntaxException
      */
     public static synchronized void processMessage(StringBuilder sb, Socket clientSocket) throws URISyntaxException {
-        RestTemplate restTemplate = new RestTemplate();
         String data = sb.toString();
-        String resourceUrl = "http://localhost:8080/process/";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<String> entity = new HttpEntity<>(data, headers);
-        URI url = new URI(resourceUrl);
-        String response = restTemplate.postForObject(url, entity, String.class);
-        sb.setLength(0);
 
         // Parse the JSON object
         Gson gson = new Gson();
@@ -165,7 +156,7 @@ public class DemoApplication {
             	break;
         }
         
-        System.out.println(data);
+        System.out.println(data + "\n");
         if (reply != null)
         {
         	sendMessage(IMEI, reply.toString());
