@@ -248,8 +248,6 @@ public class DemoApplication {
             //message sent back to PSA
             return positionReply(WZName,json.get("uuid").getAsString());
         }
-            
-            
         catch(Exception e) {
         	e.printStackTrace();
             return null;
@@ -340,15 +338,20 @@ public class DemoApplication {
      */
     public static JsonObject positionReply(String WZName, String uuid)
     {
-    	JsonObject reply = new JsonObject();
-    	reply.addProperty("Action", "WorkzoneStatus");
-    	reply.addProperty("Workzone", WZName);
-    	reply.addProperty("uuid", uuid);
+    	JsonObject reply = buildPositionDetail(WZName, uuid);
     	
     	System.out.println(reply);
     	
     	return reply;
     }
+
+	private static JsonObject buildPositionDetail(String WZName, String uuid) {
+		JsonObject reply = new JsonObject();
+    	reply.addProperty("Action", "WorkzoneStatus");
+    	reply.addProperty("Workzone", WZName);
+    	reply.addProperty("uuid", uuid);
+		return reply;
+	}
     
     /**
      * Sends a message to every device in a workZone and changes status of those devices

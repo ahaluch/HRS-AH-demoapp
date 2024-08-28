@@ -21,6 +21,13 @@ class DemoApplicationTests {
 	
 	private static DemoApplication instance;
 	private static Database dbInstance;
+	private static DeviceInfo device1;
+    private static double[][] UKPolygon = {
+      	  {59.403582176583114, -11.311147978462063},
+      	  {48.92665193728061, -10.739858915962063},
+      	  {48.98436485748158, 4.245492646537956},
+      	  {59.71528456462309, 4.465219209037956},
+      	};
 	
 	@BeforeAll
 	public static void setUp()
@@ -34,7 +41,9 @@ class DemoApplicationTests {
 			field.setAccessible(true);
 			
 			Map<String, DeviceInfo> devices = new HashMap<>();
-			DeviceInfo device1 =  new DeviceInfo(0, 0, null, null, null, "test", 0, null);
+			device1 =  new DeviceInfo(0, 0, null, null, null, "test", 0, null);
+			device1.setLatitude(52.168897715537940);
+			device1.setLongitude(0.50869543627030110);
 			
 			devices.put("1", device1);
 			field.set(instance, devices);
@@ -78,16 +87,17 @@ class DemoApplicationTests {
 			e.printStackTrace();
 		}
 		
-		//start printWriter map
+		//start deviceWriter map
 		try {
 			Field field = DemoApplication.class.getDeclaredField("deviceWriters");
 			field.setAccessible(true);
 			
 			Map<String, PrintWriter> deviceWriters = new HashMap<>();
 			
-			
-			deviceWriters.put("1", new PrintWriter(null, true));
+			/*
+			deviceWriters.put("1", new Socket(1));
 			field.set(instance, devices);
+			*/
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -103,33 +113,39 @@ class DemoApplicationTests {
 	@DisplayName("setting device Work zone normal")
 	public void setDeviceWorkZone_pass()
 	{
-		
+		String result = DemoApplication.setDeviceWorkzone("1");
+		Assertions.assertEquals("UK", result);
 	}
 	
 	@Test
 	@DisplayName("setting device Work zone fail")
 	public void setDeviceWorkZone_fail()
 	{
-		
+		device1.setLongitude(200);
+		String result = DemoApplication.setDeviceWorkzone("1");
+		device1.setLongitude(0.50869543627030110);
+		Assertions.assertEquals("-", result);
 	}
 	
 	@Test
 	@DisplayName("if point is inside a polygon, true")
 	public void isPointInPolygon_true()
 	{
-		
+		boolean result = DemoApplication.isPointInPolygon(52.168897715537940, 0.5086954362703011, UKPolygon);
+		Assertions.assertEquals(true, result);	
 	}
 	
 	@Test
 	@DisplayName("if point is inside a polygon, false")
 	public void isPointInPolygon_false()
 	{
-		
+		boolean result = DemoApplication.isPointInPolygon(502.168897715537940, 0.5086954362703011, UKPolygon);
+		Assertions.assertEquals(false, result);	
 	}
 	
 	@Test
-	@DisplayName("position reply, pass")
-	public void position_reply_pass()
+	@DisplayName("position reply")
+	public void position_reply()
 	{
 		JsonObject expected = JsonParser.parseString("{\"Action\":\"WorkzoneStatus\",\"Workzone\":\"UK\",\"uuid\":\"2\"}").getAsJsonObject();
 		JsonObject result = DemoApplication.positionReply("UK", "2");
@@ -148,11 +164,20 @@ class DemoApplicationTests {
 	}
 	
 	@Test
-	@DisplayName("position action reply fail")
-	public void position_fail()
+	@DisplayName("position action reply no WZ")
+	public void position_noWZ()
 	{
-		JsonObject json = JsonParser.parseString("{\"IMEI\":\"4345\",\"uuid\":\"2\",\"Action\":\"Position\",\"latitude\":52.16889771553794,\"longitude\":0.5086954362703011}").getAsJsonObject();
+		JsonObject json = JsonParser.parseString("{\"IMEI\":\"4345\",\"uuid\":\"2\",\"Action\":\"Position\",\"latitude\":502.16889771553794,\"longitude\":0.5086954362703011}").getAsJsonObject();
+		JsonObject expected = JsonParser.parseString("{\"Action\":\"WorkzoneStatus\",\"Workzone\":\"-\",\"uuid\":\"2\"}").getAsJsonObject();
 		JsonObject result = DemoApplication.position("1", json);
+		Assertions.assertEquals(expected, result);
+	}
+	
+	@Test
+	@DisplayName("position action reply null")
+	public void position_null()
+	{
+		JsonObject result = DemoApplication.position("1", null);
 		Assertions.assertEquals(null, result);
 	}
 	
