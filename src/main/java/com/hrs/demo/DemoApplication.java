@@ -17,14 +17,7 @@ import com.google.gson.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.web.client.RestTemplate;
 
-@SpringBootApplication
 public class DemoApplication {
     private static final Logger LOG = LoggerFactory.getLogger(DemoApplication.class);
     
@@ -49,7 +42,7 @@ public class DemoApplication {
     
     
     public static void main(String args[]) throws IOException {
-        SpringApplication.run(DemoApplication.class, args);
+        //SpringApplication.run(DemoApplication.class, args);
         
         database = new Database();
         
