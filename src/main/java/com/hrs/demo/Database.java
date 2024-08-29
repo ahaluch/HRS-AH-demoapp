@@ -67,28 +67,57 @@ public class Database {
 		  newDevice(IMEI, batteryLevel, d, network, pCBVersion, string, productName, signalStrength, iccid, status);
 	  }
   	  
-  	  //makes a new session for the device to tell when it was turned on and off
-  	  String sql = "INSERT INTO sessions (deviceID, opened_session) VALUES (?,?) RETURNING id;";
-  	  int sessionID = -1;
-		
-		//executes session query and returns the columnID
-		try (PreparedStatement statement = database.prepareStatement(sql)){
-			statement.setInt(1, getDeviceID(IMEI));
-			statement.setString(2, String.valueOf(date));
-			
-			try (ResultSet result = statement.executeQuery()) {
-				if (result.next()) {
-					sessionID = result.getInt(1);
-				}
-				System.out.println(sessionID);
-			}
-			
-		} catch( Exception e) {
-			e.printStackTrace();
+  	  return createSession(IMEI, date);
+	}
+	
+	public int powerOnDevice(String deviceAddress, double lat, double lon, LocalDateTime date)
+	{
+		int sessionID = -1;
+		String sql;
+		if (deviceExists(deviceAddress)) {
+			sql = "UPDATE devices2 SET latitude = ?, longitude = ?, lastMessage = ? WHERE IMEI = ?";
+		} else {
+			sql = "INSERT INTO devices2 (latitude, lomgitude) VALUES (?,?)";
 		}
 		
-  	  //returns id of row just inserted (Session Table) to return to save as a sessionID in DeviceInfo
-  	  return sessionID;
+		try(PreparedStatement statement = database.prepareStatement(sql)){
+			statement.setDouble(1, lat);
+			statement.setDouble(2, lon);
+			
+			statement.execute();
+			
+		} catch (Exception e) {
+			
+			
+		}
+		
+		
+		return createSession(deviceAddress, date);
+	}
+
+	private int createSession(String IMEI, LocalDateTime date) {
+		//makes a new session for the device to tell when it was turned on and off
+		  String sql = "INSERT INTO sessions (deviceID, opened_session) VALUES (?,?) RETURNING id;";
+		  int sessionID = -1;
+			
+			//executes session query and returns the columnID
+			try (PreparedStatement statement = database.prepareStatement(sql)){
+				statement.setInt(1, getDeviceID(IMEI));
+				statement.setString(2, String.valueOf(date));
+				
+				try (ResultSet result = statement.executeQuery()) {
+					if (result.next()) {
+						sessionID = result.getInt(1);
+					}
+					System.out.println(sessionID);
+				}
+				
+			} catch( Exception e) {
+				e.printStackTrace();
+			}
+			
+		  //returns id of row just inserted (Session Table) to return to save as a sessionID in DeviceInfo
+		  return sessionID;
 	}
 	
 	//powerOff action

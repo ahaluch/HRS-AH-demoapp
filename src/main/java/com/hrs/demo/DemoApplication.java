@@ -119,7 +119,7 @@ public class DemoApplication {
         JsonObject json = gson.fromJson(data, JsonObject.class);
 
         //read data that is present in every device message
-        String[] commonData = readJSON(json); // 0: IMEI, 1: action
+        String[] commonData = readJSON(json); // 0: IMEI/deviceAddress, 1: action
         String IMEI = commonData[0];
         String action = commonData[1];
         
@@ -160,6 +160,8 @@ public class DemoApplication {
             	reply = EMCCTFL.incursionButton(IMEI);
             	break;
             case "ctsupdate":
+            	reply = Intellicone.ctsupdate(json, IMEI, database);
+            	
             	
         }
         
@@ -265,7 +267,7 @@ public class DemoApplication {
     	info.getWorkZone().setAlarmStatus(RED_ALARM_MESSAGE);
   
     	//sends alarm to every device in WZ
-    	sendWZMessage(IMEI, RED_ALARM_MESSAGE, RED_STATUS);
+    	sendWZMessage(IMEI, RED_ALARM_MESSAGE, RED_STATUS, info);
     		
         return null;
     }
@@ -282,7 +284,7 @@ public class DemoApplication {
     	info.getWorkZone().setAlarmStatus(BLUE_ALARM_MESSAGE);
     	
     	//sends alarm to every device in WZ
-    	sendWZMessage(IMEI, BLUE_ALARM_MESSAGE, BLUE_STATUS);
+    	sendWZMessage(IMEI, BLUE_ALARM_MESSAGE, BLUE_STATUS, info);
     	
         return null;
     }
@@ -299,7 +301,7 @@ public class DemoApplication {
     	info.getWorkZone().setAlarmStatus(GREEN_ALARM_MESSAGE);
     	
     	//sends reset command to every device in WZ
-    	sendWZMessage(IMEI, GREEN_ALARM_MESSAGE, GREEN_STATUS);	
+    	sendWZMessage(IMEI, GREEN_ALARM_MESSAGE, GREEN_STATUS, info);	
     	return null;
     }
     
@@ -350,6 +352,28 @@ public class DemoApplication {
     	reply.addProperty("uuid", uuid);
 		return reply;
 	}
+	
+	/**
+	 * gets the workZone a specific point is in
+	 * @param lat of point
+	 * @param lon of point
+	 * @return name of WZ. null if non found
+	 */
+	public static WorkZone getWorkZone(double lat, double lon)
+	{
+		for (String workZoneName : workZones.keySet())
+		{
+    		double [][] polygon = workZones.get(workZoneName).getPolygon();
+    		
+    		//checks if devices current location is inside the current WZ being checked polygon
+    		if (isPointInPolygon(lat, lon,polygon))
+    		{
+    			return workZones.get(workZoneName);
+    		}
+		}
+		return null;
+		
+	}
     
     /**
      * Sends a message to every device in a workZone and changes status of those devices
@@ -357,10 +381,16 @@ public class DemoApplication {
      * @param reply String that will be sent to each device
      * @param status that will be put on each device in WZ
      */
-    private static void sendWZMessage(String IMEI, String reply, String status) 
+    private static void sendWZMessage(String IMEI, String reply, String status, DeviceInfo info) 
     {
     	//loops through every device in WZ to send message to
-    	for(String s: devices.get(IMEI).getWorkZone().getDeviceIMEIs()) 
+    	
+    	if(info.getWorkZone() != null) sendMessages( info.getWorkZone(), reply, status);
+    	
+    }
+
+	public static void sendMessages(WorkZone wz, String reply, String status) {
+		for(String s: wz.getDeviceIMEIs()) 
     	{
     		try {
     			// sends message to the device and updates the database with the new status
@@ -371,7 +401,7 @@ public class DemoApplication {
     		}
     		
     	}
-    }
+	}
     
     /**
      * reads the JSON data that is present in every message received. (IMEI, action)
@@ -380,9 +410,16 @@ public class DemoApplication {
      */
     public static String[] readJSON(JsonObject json) 
     {
+    	//gets the required data from the json object and returns it in an array
         try {
-        	//gets the required data from the json object and returns it in an array
-            String IMEI = json.get("IMEI").getAsString();
+        	//gets either IMEI or device address depending on if intellicone or other device
+        	String IMEI;
+        	try {
+        		IMEI = json.get("deviceAddress").getAsString();
+        	} catch(Exception e1) {
+        		IMEI = json.get("IMEI").getAsString();
+        	}
+            
             String action = json.get("Action").getAsString();
             return new String[]{IMEI, action};
         } catch (Exception e) {
