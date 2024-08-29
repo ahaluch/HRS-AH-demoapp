@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 
 import com.google.gson.*;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +44,6 @@ public class DemoApplication {
     
     
     public static void main(String args[]) throws IOException {
-        //SpringApplication.run(DemoApplication.class, args);
         
         database = new Database();
         
@@ -73,9 +74,19 @@ public class DemoApplication {
         //loads initial WZs from database
         loadWorkZones();
 
-        // Start the server to receive device messages
-        ServerSocket serverSocket = new ServerSocket(1234);
-        System.out.println("Server is running and waiting for client connection...");
+        //gets the server socket from environment variables if exists, if not default to 1234
+        int socket;
+        try {
+        	Dotenv dotenv = Dotenv.load();
+        	socket = Integer.valueOf(dotenv.get("serverSocket"));
+        } catch(Exception e) {
+        	e.printStackTrace();
+        	socket = 1234;
+        }
+       
+        // Start the server socket to receive device messages
+        ServerSocket serverSocket = new ServerSocket(socket);
+        System.out.println("Server is running and waiting for client connection on socket " + socket);
         
         //starts thread that updates WZ from changes in the database
         WorkZoneUpdater WZUpdate = new WorkZoneUpdater();
@@ -101,6 +112,7 @@ public class DemoApplication {
      */
     public static synchronized void processMessage(StringBuilder sb, Socket clientSocket) throws URISyntaxException {
         String data = sb.toString();
+        System.out.println(data + "\n");
 
         // Parse the JSON object
         Gson gson = new Gson();
@@ -147,9 +159,11 @@ public class DemoApplication {
             case "incursionButton":
             	reply = EMCCTFL.incursionButton(IMEI);
             	break;
+            case "ctsupdate":
+            	
         }
         
-        System.out.println(data + "\n");
+        
         if (reply != null)
         {
         	sendMessage(IMEI, reply.toString());
